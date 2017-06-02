@@ -92,9 +92,7 @@
                 });
 
             // ready
-            that.restart();
-
-            return this.element;
+            return that.refresh();
         },
 
         /**
