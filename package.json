@@ -1,0 +1,23 @@
+{
+  "name": "jquery.flex-grid-cell-sizer",
+  "title": "jQuery flex grid cell sizer",
+  "description": "jQuery flex grid cell sizer...",
+  "version": "0.1.0",
+  "main": "src/jquery.flex-grid-cell-sizer.js",
+  "homepage": "https://github.com/fffilo/jquery.flex-grid-cell-sizer",
+  "authors": [
+    "Franjo Filo <fffilo666@gmail.com>"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/fffilo/jquery.flex-grid-cell-sizer.git"
+  },
+  "keywords": [
+    "javascript",
+    "jquery",
+    "flex",
+    "grid",
+    "cell",
+    "sizer"
+  ]
+}
