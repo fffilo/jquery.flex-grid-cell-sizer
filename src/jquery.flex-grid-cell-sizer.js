@@ -440,12 +440,18 @@
                         {
                             element: data.column.element,
                             index: data.column.index,
-                            size: this._convert(data.column.size.stop, prec)
+                            size: {
+                                before: this._convert(data.column.size.start, prec),
+                                after: this._convert(data.column.size.stop, prec)
+                            }
                         },
                         {
                             element: data.next.element,
                             index: data.next.index,
-                            size: this._convert(data.next.size.stop, prec)
+                            size: {
+                                before: this._convert(data.next.size.start, prec),
+                                after: this._convert(data.next.size.stop, prec)
+                            }
                         }
                     ]
                 });
