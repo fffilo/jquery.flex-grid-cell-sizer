@@ -252,35 +252,13 @@
         /**
          * Emit event
          *
-         * @param  {String} event
+         * @param  {String} event event name
+         * @param  {Object} data  (optional) additional data
          * @return {Void}
          */
-        _trigger: function(event) {
+        _trigger: function(event, data) {
             var that = this;
             var _ = that._;
-
-            // get data stored in event
-            var data = $(that.element)
-                .data(_("event-data"));
-
-            // no data, create
-            if (!data) {
-                var unit = that.options.unit;
-                var prec = that.options.precision;
-
-                data = {
-                    target: that.element,
-                    column: []
-                }
-
-                $(that.columns)
-                    .each(function(i) {
-                        data.column.push({
-                            element: this,
-                            size: that._convert($(this).width(), prec)
-                        });
-                    });
-            }
 
             $(that.element)
                 .trigger(that._(event, true), data);
@@ -372,7 +350,7 @@
                 });
 
             // trigger start event
-            this._trigger("dragstart");
+            this._trigger("dragstart", data);
 
             e.preventDefault();
         },
@@ -411,7 +389,7 @@
                 .attr("data-" + _("cell-size-next"), this._convert(data.next.size.current, prec));
 
             // trigger move event
-            this._trigger("dragmove");
+            this._trigger("dragmove", data);
         },
 
         /**
@@ -444,16 +422,34 @@
             // refresh
             this.refresh();
 
-            // trigger stop event
-            this._trigger("dragstop");
-
             // clear event data
             $(data.target.element)
                 .removeData(_("event-data"));
 
+            // trigger stop event
+            this._trigger("dragstop", data);
+
             // trigger change
-            if (data.column.size.stop && data.column.size.stop !== data.column.size.start)
-                this._trigger("change");
+            if (data.column.size.stop && data.column.size.stop !== data.column.size.start) {
+                var unit = this.options.unit;
+                var prec = this.options.precision;
+
+                this._trigger("change", {
+                    target: this.element,
+                    column: [
+                        {
+                            element: data.column.element,
+                            index: data.column.index,
+                            size: this._convert(data.column.size.stop, prec)
+                        },
+                        {
+                            element: data.next.element,
+                            index: data.next.index,
+                            size: this._convert(data.next.size.stop, prec)
+                        }
+                    ]
+                });
+            }
         }
 
     }
