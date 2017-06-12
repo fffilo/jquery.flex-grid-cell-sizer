@@ -120,7 +120,7 @@
          * Enable, disable or get state
          * of resizer
          *
-         * @param  {Boolean} state
+         * @param  {Boolean} state (optional)
          * @return {Mixed}
          */
         enabled: function(state) {
@@ -134,6 +134,32 @@
         },
 
         /**
+         * Get column sizes as array
+         *
+         * @return {Array}
+         */
+        grid: function() {
+            var that = this;
+            var result = [[]];
+
+            $(that.columns)
+                .each(function(i) {
+                    var width = $(this).width();
+                    var size = that._convert(width, that.options.precision)
+
+                    result[result.length - 1].push(size);
+
+                    if ($(this).hasClass("flex-grid-break"))
+                        result.push([]);
+                });
+
+            while (!result[result.length - 1].length)
+                result.pop();
+
+            return result;
+        },
+
+        /**
          * Refresh
          *
          * @return {Void}
@@ -142,19 +168,6 @@
             this._refresh_break();
             this._refresh_columns();
             this._refresh_handles();
-        },
-
-        /**
-         * Columns init state
-         *
-         * @return {Void}
-         */
-        restart: function() {
-            $(this.columns)
-                .css("max-width", "")
-                .css("width", "");
-
-            this.refresh();
         },
 
         /**
