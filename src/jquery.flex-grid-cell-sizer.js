@@ -656,9 +656,12 @@
 
         var too = Object.prototype.toString.call(options).split(" ")[1].slice(0, -1);
         var arg = arguments;
+        var err = function(msg) {
+            throw "FlexGridCellSizerException: " + msg;
+        }
 
         // init FlexGridCellSizer instance
-        if (too === "Object" || too === "Undefined") {
+        if (too === "Object" || too === "Undefined" || options === "init") {
             return $(this)
                 .each(function() {
                     new FlexGridCellSizer(this, options);
@@ -672,7 +675,7 @@
                 .each(function() {
                     var instance = $(this).data(FlexGridCellSizer.prototype._.call(this));
                     if (!(instance instanceof FlexGridCellSizer))
-                        throw "FlexGridCellSizerException: instance not initialized.";
+                        err("instance not initialized.");
 
                     result = instance[options].apply(instance, Array.prototype.slice.call(arg, 1));
                 });
@@ -682,11 +685,11 @@
 
         // invalid method
         else if (too === "String") {
-            throw "FlexGridCellSizerException: invalid method name '" + options + "'.";
+            err("invalid method name '" + options + "'.");
         }
 
         // invalid argument type
-        throw "FlexGridCellSizerException: invalid argument type '" + too + "'.";
+        err("invalid argument type '" + too + "'.");
 
     }
 
