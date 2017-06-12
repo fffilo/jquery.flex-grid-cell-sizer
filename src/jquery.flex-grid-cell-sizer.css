@@ -19,6 +19,7 @@
 .jquery-flex-grid-cell-sizer-handle::before, .jquery-flex-grid-cell-sizer-handle::after { content: ""; position: absolute; display: inline-block; top: 0; height: 1em; line-height: 1; text-align: center; }
 .jquery-flex-grid-cell-sizer-handle::before { content: attr(data-jquery-flex-grid-cell-sizer-cell-size-column); right: 1em; }
 .jquery-flex-grid-cell-sizer-handle::after { content: attr(data-jquery-flex-grid-cell-sizer-cell-size-next); left: 1em; }
+.jquery-flex-grid-cell-sizer.jquery-flex-grid-cell-sizer-disabled .jquery-flex-grid-cell-sizer-handle::before, .jquery-flex-grid-cell-sizer.jquery-flex-grid-cell-sizer-disabled .jquery-flex-grid-cell-sizer-handle::after { display: none; }
 html.jquery-flex-grid-cell-sizer-dragging, html.jquery-flex-grid-cell-sizer-dragging * { cursor: ew-resize !important; }
 html.jquery-flex-grid-cell-sizer-dragging .jquery-flex-grid-cell-sizer-handle:hover { opacity: 0; }
 html.jquery-flex-grid-cell-sizer-dragging .jquery-flex-grid-cell-sizer-handle.jquery-flex-grid-cell-sizer-dragging { opacity: 1; }

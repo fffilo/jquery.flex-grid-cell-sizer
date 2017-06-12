@@ -58,7 +58,7 @@
         /**
          * Initialize
          *
-         * @return {Object}
+         * @return {Void}
          */
         init: function() {
             var that = this;
@@ -92,13 +92,13 @@
                 });
 
             // ready
-            return that.refresh();
+            that.refresh();
         },
 
         /**
          * Destructor
          *
-         * @return {Object}
+         * @return {Void}
          */
         destroy: function() {
             var _ = this._;
@@ -114,21 +114,34 @@
 
             $(window)
                 .off("." + _());
+        },
 
-            return this.element;
+        /**
+         * Enable, disable or get state
+         * of resizer
+         *
+         * @param  {Boolean} state
+         * @return {Mixed}
+         */
+        enabled: function(state) {
+            if (typeof state === "undefined")
+                return !$(this.element).hasClass("jquery-flex-grid-cell-sizer-disabled");
+
+            $(this.element)
+                .removeClass("jquery-flex-grid-cell-sizer-disabled")
+                .addClass(state ? "_temp" : "jquery-flex-grid-cell-sizer-disabled")
+                .removeClass("_temp");
         },
 
         /**
          * Refresh
          *
-         * @return {Object}
+         * @return {Void}
          */
         refresh: function() {
             this._refresh_break();
             this._refresh_columns();
             this._refresh_handles();
-
-            return this.element;
         },
 
         /**
@@ -142,8 +155,6 @@
                 .css("width", "");
 
             this.refresh();
-
-            return this.element;
         },
 
         /**
@@ -463,21 +474,39 @@
     // jQuery plugin
     $.fn.flexGridCellSizer = function(options) {
 
-        return $(this)
-            .each(function() {
-                // check
-                var lib = $(this).data(FlexGridCellSizer.prototype._.call(this));
+        var too = Object.prototype.toString.call(options).split(" ")[1].slice(0, -1);
+        var arg = arguments;
 
-                // init
-                if (!lib)
-                    lib = new FlexGridCellSizer(this, typeof options === "object" ? options : {});
+        // init FlexGridCellSizer instance
+        if (too === "Object" || too === "Undefined") {
+            return $(this)
+                .each(function() {
+                    new FlexGridCellSizer(this, options);
+                });
+        }
 
-                // global methods
-                if (typeof options === "string" && options.substr(0,1) !== "_" && options in lib)
-                    return lib[options].apply(lib, Array.prototype.slice.call(arguments, 1));
-                else if (typeof options === "string")
-                    throw "FlexGridCellSizerException: invalid method name '" + options + "'.";
-            });
+        // execute method
+        else if (too === "String" && options.substr(0,1) !== "_" && options in FlexGridCellSizer.prototype) {
+            var result;
+            $(this)
+                .each(function() {
+                    var instance = $(this).data(FlexGridCellSizer.prototype._.call(this));
+                    if (!(instance instanceof FlexGridCellSizer))
+                        throw "FlexGridCellSizerException: instance not initialized.";
+
+                    result = instance[options].apply(instance, Array.prototype.slice.call(arg, 1));
+                });
+
+            return typeof result === "undefined" ? this : result;
+        }
+
+        // invalid method
+        else if (too === "String") {
+            throw "FlexGridCellSizerException: invalid method name '" + options + "'.";
+        }
+
+        // invalid argument type
+        throw "FlexGridCellSizerException: invalid argument type '" + too + "'.";
 
     }
 
