@@ -117,6 +117,34 @@
         },
 
         /**
+         * Get column sizes as array
+         *
+         * @return {Array}
+         */
+        grid: function() {
+            var that = this;
+            var result = [[]];
+
+            // iterate columns
+            $(that.columns)
+                .each(function(i) {
+                    var width = $(this).width();
+                    var size = that._convert(width, that.options.precision)
+
+                    result[result.length - 1].push(size);
+
+                    if ($(this).hasClass("flex-grid-break"))
+                        result.push([]);
+                });
+
+            // remove empty row
+            while (!result[result.length - 1].length)
+                result.pop();
+
+            return result;
+        },
+
+        /**
          * Enable, disable or get state
          * of resizer
          *
@@ -134,29 +162,88 @@
         },
 
         /**
-         * Get column sizes as array
+         * Get/set column break
          *
-         * @return {Array}
+         * @param  {Number}  index
+         * @param  {Boolean} state (optional)
+         * @return {Mixed}
          */
-        grid: function() {
-            var that = this;
-            var result = [[]];
+        columnBreak: function(index, state) {
+            if (typeof state === "undefined")
+                return this.columns.eq(index).hasClass("flex-grid-break");
 
-            $(that.columns)
+            // state not changed
+            if (state == this.columnBreak(index))
+                return;
+
+            // index out of range and last column is always in break state
+            if (index < 0 || index >= this.columns.length - 1)
+                return;
+
+            // get grid
+            var row = this._row_of_column(index);
+            var col = this._columns_in_row(row);
+            var grid = this.grid();
+            var result = $.extend(true, [], grid);
+
+            // find column in row
+            var start;
+            for (var i in col) {
+                if (col[i] == index) {
+                    start = i * 1;
+                    break
+                }
+            }
+
+            // split
+            if (state) {
+                var arr = result[row].splice(0, start + 1);
+                result.splice(row, 0, arr);
+            }
+
+            // join
+            else {
+                result[row] = result[row].concat(result[row + 1])
+                result.splice(row + 1, 1);
+            }
+
+            // fix widths
+            if (row < result.length)
+                result[row] = this._stretch(result[row]);
+            if (row + 1 < result.length)
+                result[row + 1] = this._stretch(result[row + 1]);
+
+            // concat results
+            grid = [].concat.apply([], grid);
+            result = [].concat.apply([], result);
+
+            // set widths
+            var columns = [];
+            $(this.columns)
                 .each(function(i) {
-                    var width = $(this).width();
-                    var size = that._convert(width, that.options.precision)
+                    if (grid[i] != result[i]) {
+                        columns.push({
+                            element: this,
+                            index: i,
+                            size: {
+                                before: grid[i],
+                                after: result[i]
+                            }
+                        });
 
-                    result[result.length - 1].push(size);
-
-                    if ($(this).hasClass("flex-grid-break"))
-                        result.push([]);
+                        $(this).width(result[i]);
+                    }
                 });
 
-            while (!result[result.length - 1].length)
-                result.pop();
+            // refresh
+            this.refresh();
 
-            return result;
+            // trigger changes
+            if (columns.length)
+                this._trigger("change", {
+                    target: this.element,
+                    column: columns
+                });
         },
 
         /**
@@ -246,6 +333,86 @@
                         .attr("data-" + _("cell-size-column"), that._convert($(that.columns).eq(i).width(), prec))
                         .attr("data-" + _("cell-size-next"), that._convert($(that.columns).eq(i + 1).width(), prec));
                 });
+        },
+
+        /**
+         * Increase/decrease sizes to fit
+         * 100% width
+         *
+         * @param  {Array} values
+         * @return {Array}
+         */
+        _stretch: function(values) {
+            var width = $(this.element).width();
+            var prec = this.options.precision;
+            var unit = this.options.unit;
+            var size = this._convert(width, prec);
+            var result = [];
+
+            var sum = 0;
+            for (var i = 0; i < values.length; i++) {
+                sum += parseFloat(values[i]);
+            }
+
+            var inc = parseFloat(size) / sum;
+            for (var i = 0; i < values.length; i++) {
+                result.push((parseFloat(values[i]) * inc).toFixed(prec) + unit);
+            }
+
+            return result;
+        },
+
+        /**
+         * Get row index of column
+         *
+         * @param  {Number} index
+         * @return {Number}
+         */
+        _row_of_column: function(index) {
+            var grid = this.grid();
+            var count = -1;
+            var result = null;
+
+            for (var row in grid) {
+                for (var col in grid[row]) {
+                    count += 1;
+
+                    if (count == index) {
+                        result = row * 1;
+                        break;
+                    }
+                }
+
+                if (result !== null)
+                    break;
+            }
+
+            return result;
+        },
+
+        /**
+         * Get column indexes of row
+         *
+         * @param  {Number} index
+         * @return {Array}
+         */
+        _columns_in_row: function(index) {
+            var grid = this.grid();
+            var start = 0;
+            var result = [];
+
+            // find starting column index
+            for (var i = 0; i < index; i++) {
+                start += grid[i].length;
+            }
+
+            // append row columns
+            for (var i = 0; i < grid[index].length; i++) {
+                result.push(start);
+                start++;
+            }
+
+            return result;
         },
 
         /**
