@@ -162,6 +162,20 @@
         },
 
         /**
+         * Get column width
+         *
+         * @param  {Number} index
+         * @return {String}
+         */
+        width: function(index) {
+            var width = $(this.columns).eq(index).width();
+            if (typeof width === "undefined")
+                return null;
+
+            return this._convert(width, this.options.precision);
+        },
+
+        /**
          * Get/set column break
          *
          * @param  {Number}  index
