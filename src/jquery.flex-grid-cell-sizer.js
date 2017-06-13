@@ -61,38 +61,21 @@
          * @return {Void}
          */
         init: function() {
-            var that = this;
-            var _ = that._;
+            var _ = this._;
 
             // already initialized
             if ($(this.element).data(_()))
                 return;
 
             // init
-            that.options = $.extend({}, that._defaults, that.options);
-            that.element = $(that.element)
+            this.options = $.extend({}, this._defaults, this.options);
+            this.element = $(this.element)
                 .addClass(_())
-                .data(_(), that);
-
-            // create handles
-            that.handles = $(null);
-            that.columns = $(that.element)
-                .children(that.options.children)
-                .addClass(_("cell"))
-                .each(function() {
-                    var $handle = $("<div />")
-                        .addClass(_("handle"))
-                        .on("mousedown." + _(), function(e) {
-                            that._handle_mousedown.call(that, e);
-                        })
-                        .appendTo(this);
-
-                    that.handles = $(that.handles)
-                        .add($handle);
-                });
+                .data(_(), this);
 
             // ready
-            that.refresh();
+            this._recreate_handles();
+            this.refresh();
         },
 
         /**
@@ -145,6 +128,38 @@
         },
 
         /**
+         * Get grid position of column
+         *
+         * @param  {Number} index
+         * @return {Object}
+         */
+        position: function(index) {
+            var grid = this.grid();
+            var count = -1;
+            var result = null;
+
+            for (var row in grid) {
+                for (var col in grid[row]) {
+                    count += 1;
+
+                    if (count == index) {
+                        result = {
+                            x: col * 1,
+                            y: row * 1
+                        }
+
+                        break;
+                    }
+                }
+
+                if (result !== null)
+                    break;
+            }
+
+            return result;
+        },
+
+        /**
          * Enable, disable or get state
          * of resizer
          *
@@ -176,6 +191,38 @@
         },
 
         /**
+         * Insert new column before index
+         *
+         * @param  {Number} index   position index
+         * @param  {Mixed}  element DOM node, jQuery element or string selector
+         * @return {Void}
+         */
+        insertBefore: function(index, element) {
+            return this._alter_column("insertBefore", index, element);
+        },
+
+        /**
+         * Insert new column after index
+         *
+         * @param  {Number} index   position index
+         * @param  {Mixed}  element DOM node, jQuery element or string selector
+         * @return {Void}
+         */
+        insertAfter: function(index, element) {
+            return this._alter_column("insertAfter", index, element);
+        },
+
+        /**
+         * Remove column
+         *
+         * @param  {Number} index
+         * @return {Void}
+         */
+        remove: function(index) {
+            return this._alter_column("remove", index);
+        },
+
+        /**
          * Get/set column break
          *
          * @param  {Number}  index
@@ -183,81 +230,11 @@
          * @return {Mixed}
          */
         columnBreak: function(index, state) {
-            if (typeof state === "undefined")
-                return this.columns.eq(index).hasClass("flex-grid-break");
+            var result = this._alter_column("break", index, state);
+            if (typeof state === "undefined" && typeof result === "undefined")
+                result = null;
 
-            // state not changed
-            if (state == this.columnBreak(index))
-                return;
-
-            // index out of range and last column is always in break state
-            if (index < 0 || index >= this.columns.length - 1)
-                return;
-
-            // get grid
-            var row = this._row_of_column(index);
-            var col = this._columns_in_row(row);
-            var grid = this.grid();
-            var result = $.extend(true, [], grid);
-
-            // find column in row
-            var start;
-            for (var i in col) {
-                if (col[i] == index) {
-                    start = i * 1;
-                    break
-                }
-            }
-
-            // split
-            if (state) {
-                var arr = result[row].splice(0, start + 1);
-                result.splice(row, 0, arr);
-            }
-
-            // join
-            else {
-                result[row] = result[row].concat(result[row + 1])
-                result.splice(row + 1, 1);
-            }
-
-            // fix widths
-            if (row < result.length)
-                result[row] = this._stretch(result[row]);
-            if (row + 1 < result.length)
-                result[row + 1] = this._stretch(result[row + 1]);
-
-            // concat results
-            grid = [].concat.apply([], grid);
-            result = [].concat.apply([], result);
-
-            // set widths
-            var columns = [];
-            $(this.columns)
-                .each(function(i) {
-                    if (grid[i] != result[i]) {
-                        columns.push({
-                            element: this,
-                            index: i,
-                            size: {
-                                before: grid[i],
-                                after: result[i]
-                            }
-                        });
-
-                        $(this).width(result[i]);
-                    }
-                });
-
-            // refresh
-            this.refresh();
-
-            // trigger changes
-            if (columns.length)
-                this._trigger("change", {
-                    target: this.element,
-                    column: columns
-                });
+            return result;
         },
 
         /**
@@ -269,6 +246,36 @@
             this._refresh_break();
             this._refresh_columns();
             this._refresh_handles();
+        },
+
+        /**
+         * Refresh columns and recreate handles
+         *
+         * @return {Void}
+         */
+        _recreate_handles: function() {
+            var that = this;
+            var _ = that._;
+
+            that.handles = $(null);
+            that.columns = $(that.element)
+                .children(that.options.children)
+                .addClass(_("cell"))
+                .each(function() {
+                    $(this)
+                        .children("." + _("handle"))
+                        .remove();
+
+                    var $handle = $("<div />")
+                        .addClass(_("handle"))
+                        .on("mousedown." + _(), function(e) {
+                            that._handle_mousedown.call(that, e);
+                        })
+                        .appendTo(this);
+
+                    that.handles = $(that.handles)
+                        .add($handle);
+                });
         },
 
         /**
@@ -350,6 +357,139 @@
         },
 
         /**
+         * Break column, remove or insert
+         * new column before/after index.
+         *
+         * For break action state is optional.
+         * If no state is provided the result
+         * will be current column state (break
+         * or not). If state is provided then
+         * new state will be appended to column.
+         *
+         * For insert actions state must be DOM
+         * node, jQuery element or string
+         * selector (mandatory).
+         *
+         * @todo : refactor this
+         *
+         * @param  {String} action  break, remove, insertBefore or insertAfter
+         * @param  {Number} index   column index
+         * @param  {Mixed}  state   (optional)
+         * @return {Void}
+         */
+        _alter_column: function(action, index, state) {
+            if (["break", "remove", "insertBefore", "insertAfter"].indexOf(action) === -1)
+                return;
+
+            // element must exist on insert actions
+            if (!$(state).length && ["insertBefore", "insertAfter"].indexOf(action) !== -1)
+                return;
+
+            // grid
+            var grid = this.grid();
+            var result = $.extend(true, [], grid);
+
+            // column position
+            var pos = this.position(index);
+            if (!pos)
+                return;
+
+            // break action
+            if (action === "break") {
+                // get state
+                if (typeof state === "undefined")
+                    return grid[pos.y].length === pos.x + 1;
+
+                // split
+                else if (state) {
+                    var arr = result[pos.y].splice(0, pos.x + 1);
+                    result.splice(pos.y, 0, arr);
+
+                    result[pos.y] = this._stretch(result[pos.y]);
+                    result[pos.y + 1] = this._stretch(result[pos.y + 1]);
+                }
+
+                // join
+                else {
+                    result[pos.y] = result[pos.y].concat(result[pos.y + 1])
+                    result.splice(pos.y + 1, 1);
+
+                    result[pos.y] = this._stretch(result[pos.y]);
+                }
+
+            }
+
+            // remove action
+            else if (action === "remove") {
+                grid[pos.y].splice(pos.x, 1);
+                result[pos.y].splice(pos.x, 1);
+
+                result[pos.y] = this._stretch(result[pos.y]);
+            }
+
+            // insert actions
+            else {
+                var sum = 0;
+                for (var i in result[pos.y]) {
+                    sum += parseFloat(result[pos.y][i]);
+                }
+                var avg = sum / result[pos.y].length;
+
+                var offset = pos.x + ("insertAfter" ? 1 : 0)
+                grid[pos.y].splice(offset, 0, 0);
+                result[pos.y].splice(offset, 0, avg);
+
+                result[pos.y] = this._stretch(result[pos.y]);
+            }
+
+            // concat results
+            grid = [].concat.apply([], grid);
+            result = [].concat.apply([], result);
+
+            // execute action
+            if (action === "break") {
+                // pass
+            }
+            else if (action === "remove") {
+                this.columns.eq(index)[action]();
+            }
+            else {
+                $(state)[action](this.columns.eq(index));
+            }
+
+            // recreate columns/handles
+            this._recreate_handles();
+
+            // fix sizes (get changes)
+            var columns = [];
+            $(this.columns)
+                .each(function(i) {
+                    if (grid[i] != result[i]) {
+                        columns.push({
+                            element: this,
+                            index: i,
+                            size: {
+                                before: grid[i],
+                                after: result[i]
+                            }
+                        });
+
+                        $(this).width(result[i]);
+                    }
+                });
+
+            // refresh grid
+            this.refresh();
+
+            // trigger change
+            if (columns.length)
+                this._trigger("change", {
+                    target: this.element,
+                    column: columns
+                });
+        },
+
+        /**
          * Increase/decrease sizes to fit
          * 100% width
          *
@@ -363,67 +503,25 @@
             var size = this._convert(width, prec);
             var result = [];
 
+            // calculate size
             var sum = 0;
             for (var i = 0; i < values.length; i++) {
                 sum += parseFloat(values[i]);
             }
 
-            var inc = parseFloat(size) / sum;
+            // increase by avg value
+            var avg = parseFloat(size) / sum;
+            var current = 0;
             for (var i = 0; i < values.length; i++) {
-                result.push((parseFloat(values[i]) * inc).toFixed(prec) + unit);
-            }
+                var val = parseFloat(values[i]) * avg;
+                val = val.toFixed(prec);
 
-            return result;
-        },
+                // fix decimal rounding problem
+                if (i === values.length - 1)
+                    val = (parseFloat(size) - current).toFixed(prec);
 
-        /**
-         * Get row index of column
-         *
-         * @param  {Number} index
-         * @return {Number}
-         */
-        _row_of_column: function(index) {
-            var grid = this.grid();
-            var count = -1;
-            var result = null;
-
-            for (var row in grid) {
-                for (var col in grid[row]) {
-                    count += 1;
-
-                    if (count == index) {
-                        result = row * 1;
-                        break;
-                    }
-                }
-
-                if (result !== null)
-                    break;
-            }
-
-            return result;
-        },
-
-        /**
-         * Get column indexes of row
-         *
-         * @param  {Number} index
-         * @return {Array}
-         */
-        _columns_in_row: function(index) {
-            var grid = this.grid();
-            var start = 0;
-            var result = [];
-
-            // find starting column index
-            for (var i = 0; i < index; i++) {
-                start += grid[i].length;
-            }
-
-            // append row columns
-            for (var i = 0; i < grid[index].length; i++) {
-                result.push(start);
-                start++;
+                result.push(val + unit);
+                current += parseFloat(val);
             }
 
             return result;
