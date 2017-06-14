@@ -405,6 +405,9 @@
                     var arr = result[pos.y].splice(0, pos.x + 1);
                     result.splice(pos.y, 0, arr);
 
+                    if (!result[pos.y + 1].length)
+                        result.splice(pos.y + 1, 1);
+
                     result[pos.y] = this._stretch(result[pos.y]);
                     result[pos.y + 1] = this._stretch(result[pos.y + 1]);
                 }
