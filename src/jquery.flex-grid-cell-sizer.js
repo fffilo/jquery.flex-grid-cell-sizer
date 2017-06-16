@@ -401,7 +401,7 @@
                 this._recreate_handles();
             }
             else if (["insertBefore", "insertAfter"].indexOf(action) !== -1) {
-                $(state)[action]($column);
+                $(element)[action]($column);
                 this._recreate_handles();
             }
 
