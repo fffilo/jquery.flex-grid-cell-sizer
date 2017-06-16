@@ -5,6 +5,11 @@
     /**
      * Constructor
      *
+     * @todo:
+     *     - resize columns with shift/ctrl
+     *     - disabled element resizing
+     *     - invisible columns
+     *
      * @param {Object} element HTML node
      * @param {Object} options see FlexGridCellSizer.prototype._defaults
      * @return {Void}
@@ -92,6 +97,7 @@
                 .off("." + _())
                 .children("." + _("cell"))
                     .removeClass(_("cell"))
+                    .removeAttr("data-" + _())
                     .children("." + _("handle"))
                         .remove();
 
@@ -106,18 +112,23 @@
          */
         grid: function() {
             var that = this;
+            var size = $(that.element).outerWidth();
+            var prec = that.options.precision;
+            var current = 0;
             var result = [[]];
 
             // iterate columns
             $(that.columns)
                 .each(function(i) {
                     var width = $(this).width();
-                    var size = that._convert(width, that.options.precision)
+                    current += width;
 
-                    result[result.length - 1].push(size);
-
-                    if ($(this).hasClass("flex-grid-break"))
+                    if (Math.round(current) > Math.round(size)) {
                         result.push([]);
+                        current = width;
+                    }
+
+                    result[result.length - 1].push(that._convert(width, prec));
                 });
 
             // remove empty row
@@ -125,55 +136,6 @@
                 result.pop();
 
             return result;
-        },
-
-        /**
-         * Get grid position of column
-         *
-         * @param  {Number} index
-         * @return {Object}
-         */
-        position: function(index) {
-            var grid = this.grid();
-            var count = -1;
-            var result = null;
-
-            for (var row in grid) {
-                for (var col in grid[row]) {
-                    count += 1;
-
-                    if (count == index) {
-                        result = {
-                            x: col * 1,
-                            y: row * 1
-                        }
-
-                        break;
-                    }
-                }
-
-                if (result !== null)
-                    break;
-            }
-
-            return result;
-        },
-
-        /**
-         * Enable, disable or get state
-         * of resizer
-         *
-         * @param  {Boolean} state (optional)
-         * @return {Mixed}
-         */
-        enabled: function(state) {
-            if (typeof state === "undefined")
-                return !$(this.element).hasClass("jquery-flex-grid-cell-sizer-disabled");
-
-            $(this.element)
-                .removeClass("jquery-flex-grid-cell-sizer-disabled")
-                .addClass(state ? "_temp" : "jquery-flex-grid-cell-sizer-disabled")
-                .removeClass("_temp");
         },
 
         /**
@@ -223,18 +185,23 @@
         },
 
         /**
-         * Get/set column break
+         * Split row on column
          *
-         * @param  {Number}  index
-         * @param  {Boolean} state (optional)
-         * @return {Mixed}
+         * @param  {Number} index
+         * @return {Void}
          */
-        columnBreak: function(index, state) {
-            var result = this._alter_column("break", index, state);
-            if (typeof state === "undefined" && typeof result === "undefined")
-                result = null;
+        split: function(index) {
+            return this._alter_column("split", index);
+        },
 
-            return result;
+        /**
+         * Join row on column
+         *
+         * @param  {Number} index
+         * @return {Void}
+         */
+        join: function(index) {
+            return this._alter_column("join", index);
         },
 
         /**
@@ -243,9 +210,35 @@
          * @return {Void}
          */
         refresh: function() {
-            this._refresh_break();
-            this._refresh_columns();
-            this._refresh_handles();
+            var grid = this.grid();
+            var current = -1;
+            var _ = this._;
+
+            for (var row in grid) {
+                for (var col in grid[row]) {
+                    current++;
+
+                    var $column = this.columns.eq(current);
+                    var $resize = this.handles.resize.eq(current);
+                    var width = $column.width();
+
+                    $column
+                        .width(this._convert(width, this.options.precision))
+                        .css("max-width", "")
+                        .attr("data-" + _("grid"), col + "," + row)
+                        .removeClass(_("grid-last-row"))
+                        .removeClass(_("grid-last-column"));
+
+                    $resize
+                        .attr("data-" + _("cell-size-column"), this._convert(width, this.options.displayPrecision))
+                        .attr("data-" + _("cell-size-next"), this._convert($(this.columns).eq(current + 1).width(), this.options.displayPrecision))
+
+                    if (row*1 + 1 === grid.length)
+                        $column.addClass(_("grid-last-row"));
+                    if (col*1 + 1 === grid[row].length)
+                        $column.addClass(_("grid-last-column"));
+                }
+            }
         },
 
         /**
@@ -257,7 +250,12 @@
             var that = this;
             var _ = that._;
 
-            that.handles = $(null);
+            that.handles = {
+                resize: $(null),
+                split: $(null),
+                join: $(null)
+            }
+
             that.columns = $(that.element)
                 .children(that.options.children)
                 .addClass(_("cell"))
@@ -266,160 +264,108 @@
                         .children("." + _("handle"))
                         .remove();
 
-                    var $handle = $("<div />")
+                    var $split = $("<a />")
+                        .attr("href", "#")
                         .addClass(_("handle"))
-                        .on("mousedown." + _(), function(e) {
-                            that._handle_mousedown.call(that, e);
+                        .addClass(_("handle-split"))
+                        .html("&#8629;")
+                        .on("click." + _(), function(e) {
+                            that._handle_split_click.call(that, e);
                         })
                         .appendTo(this);
 
-                    that.handles = $(that.handles)
-                        .add($handle);
+                    var $join = $("<a />")
+                        .attr("href", "#")
+                        .addClass(_("handle"))
+                        .addClass(_("handle-join"))
+                        .html("&#8612;")
+                        .on("click." + _(), function(e) {
+                            that._handle_join_click.call(that, e);
+                        })
+                        .appendTo(this);
+
+                    var $resize = $("<span />")
+                        .addClass(_("handle"))
+                        .addClass(_("handle-resize"))
+                        .on("mousedown." + _(), function(e) {
+                            that._handle_resize_mousedown.call(that, e);
+                        })
+                        .appendTo(this);
+
+                    that.handles.split = $(that.handles.split)
+                        .add($split);
+                    that.handles.join = $(that.handles.join)
+                        .add($join);
+                    that.handles.resize = $(that.handles.resize)
+                        .add($resize);
                 });
         },
 
         /**
-         * Add break class to cell element
-         *
-         * @return {Void}
-         */
-        _refresh_break: function() {
-            var that = this;
-            var total = $(that.element).outerWidth();
-            var current = 0;
-
-            $(that.columns)
-                .removeClass("flex-grid-break")
-                .each(function(i) {
-
-                    if ($(this).hasClass("flex-grid-hidden"))
-                        return;
-
-                    var width = $(this).width();
-                    current += width;
-
-                    if (Math.round(current) > Math.round(total)) {
-                        $(that.columns)
-                            .eq(i - 1)
-                                .addClass("flex-grid-break");
-
-                        current = width;
-                    }
-                })
-                .last()
-                    .addClass("flex-grid-break");
-        },
-
-        /**
-         * Convert column sizes from px to options.units
-         *
-         * @return {Void}
-         */
-        _refresh_columns: function() {
-            var that = this;
-            var prec = that.options.precision;
-            var size = $(this.element).outerWidth();
-            var row = 0;
-
-            $(that.columns)
-                .each(function() {
-                    var width = $(this).width();
-                    row += width;
-
-                    if ($(this).hasClass("flex-grid-break")) {
-                        width = size - (row - width);
-                        row = 0;
-                    }
-
-                    $(this)
-                        .width(that._convert(width, prec))
-                })
-                .css("max-width", "");
-        },
-
-        /**
-         * Set size in handles content
-         * (::before and ::after pseudo elements)
-         *
-         * @return {Void}
-         */
-        _refresh_handles: function() {
-            var that = this;
-            var prec = that.options.displayPrecision;
-            var _ = that._;
-
-            $(this.handles)
-                .each(function(i) {
-                    $(this)
-                        .attr("data-" + _("cell-size-column"), that._convert($(that.columns).eq(i).width(), prec))
-                        .attr("data-" + _("cell-size-next"), that._convert($(that.columns).eq(i + 1).width(), prec));
-                });
-        },
-
-        /**
-         * Break column, remove or insert
+         * Split, join, remove or insert
          * new column before/after index.
          *
-         * For break action state is optional.
-         * If no state is provided the result
-         * will be current column state (break
-         * or not). If state is provided then
-         * new state will be appended to column.
+         * For split, join and remove action
+         * element argument is ignored.
          *
-         * For insert actions state must be DOM
-         * node, jQuery element or string
-         * selector (mandatory).
+         * For insert actions element must
+         * be DOM node, jQuery element or
+         * string selector (mandatory).
          *
          * @todo : refactor this
          *
-         * @param  {String} action  break, remove, insertBefore or insertAfter
+         * @param  {String} action  split, join, remove, insertBefore or insertAfter
          * @param  {Number} index   column index
-         * @param  {Mixed}  state   (optional)
+         * @param  {Mixed}  element (optional)
          * @return {Void}
          */
-        _alter_column: function(action, index, state) {
-            if (["break", "remove", "insertBefore", "insertAfter"].indexOf(action) === -1)
+        _alter_column: function(action, index, element) {
+            if (["split", "join", "remove", "insertBefore", "insertAfter"].indexOf(action) === -1)
                 return;
 
             // element must exist on insert actions
-            if (!$(state).length && ["insertBefore", "insertAfter"].indexOf(action) !== -1)
+            if (!$(element).length && ["insertBefore", "insertAfter"].indexOf(action) !== -1)
                 return;
 
             // grid
             var grid = this.grid();
             var result = $.extend(true, [], grid);
+            var $column = this.columns.eq(index);
 
             // column position
-            var pos = this.position(index);
+            var pos = $column.attr("data-" + this._("grid"));
             if (!pos)
                 return;
+            pos = pos.split(",");
+            pos = {
+                x: pos[0] * 1,
+                y: pos[1] * 1
+            }
 
-            // break action
-            if (action === "break") {
-                // get state
-                if (typeof state === "undefined")
-                    return grid[pos.y].length === pos.x + 1;
+            // split action
+            if (action === "split") {
+                if (pos.x + 1 === grid[pos.y].length)
+                    return;
 
-                // split
-                else if (state) {
-                    var arr = result[pos.y].splice(0, pos.x + 1);
-                    result.splice(pos.y, 0, arr);
+                var arr = result[pos.y].splice(0, pos.x + 1);
+                result.splice(pos.y, 0, arr);
 
-                    if (!result[pos.y + 1].length)
-                        result.splice(pos.y + 1, 1);
-
-                    result[pos.y] = this._stretch(result[pos.y]);
-                    result[pos.y + 1] = this._stretch(result[pos.y + 1]);
-                }
-
-                // join
-                else {
-                    result[pos.y] = result[pos.y].concat(result[pos.y + 1])
+                if (!result[pos.y + 1].length)
                     result.splice(pos.y + 1, 1);
 
-                    result[pos.y] = this._stretch(result[pos.y]);
-                }
+                result[pos.y] = this._stretch(result[pos.y]);
+                result[pos.y + 1] = this._stretch(result[pos.y + 1]);
+            }
 
+            // join action
+            else if (action === "join") {
+                if (pos.x !== 0 || pos.x === 0 && pos.y === 0)
+                    return;
+
+                result[pos.y - 1] = result[pos.y - 1].concat(result[pos.y])
+                result.splice(pos.y, 1);
+
+                result[pos.y - 1] = this._stretch(result[pos.y - 1]);
             }
 
             // remove action
@@ -450,18 +396,14 @@
             result = [].concat.apply([], result);
 
             // execute action
-            if (action === "break") {
-                // pass
+            if (action === "remove") {
+                $column[action]();
+                this._recreate_handles();
             }
-            else if (action === "remove") {
-                this.columns.eq(index)[action]();
+            else if (["insertBefore", "insertAfter"].indexOf(action) !== -1) {
+                $(state)[action]($column);
+                this._recreate_handles();
             }
-            else {
-                $(state)[action](this.columns.eq(index));
-            }
-
-            // recreate columns/handles
-            this._recreate_handles();
 
             // fix sizes (get changes)
             var columns = [];
@@ -571,27 +513,49 @@
         },
 
         /**
+         * Handle click event handler
+         *
+         * @param  {Object} e
+         * @return {Void}
+         */
+        _handle_split_click: function(e) {
+            this.split(this.handles.split.index(e.target));
+            e.preventDefault();
+        },
+
+        /**
+         * Handle click event handler
+         *
+         * @param  {Object} e
+         * @return {Void}
+         */
+        _handle_join_click: function(e) {
+            this.join(this.handles.join.index(e.target));
+            e.preventDefault();
+        },
+
+        /**
          * Handle mousedown event handler
          *
          * @param  {Object} e
          * @return {Void}
          */
-        _handle_mousedown: function(e) {
+        _handle_resize_mousedown: function(e) {
             // left mouse button only
             if (e.which !== 1)
                 return;
 
             var that = this;
-            var index = $(that.handles).index(e.target);
+            var index = $(that.handles.resize).index(e.target);
             var $element = $(that.element);
             var $column = $(that.columns).eq(index);
             var $next = $(that.columns).eq(index + 1);
-            var $handle = $(that.handles).eq(index);
+            var $handle = $(that.handles.resize).eq(index);
             var _ = that._;
 
             // mouseup outside viewport fix
             if ($(this.element).data(_("event-data")))
-                this._handle_mouseup(e);
+                this._handle_resize_mouseup(e);
 
             // event data
             var data = {
@@ -649,10 +613,10 @@
             // bind mouse events on window
             $(window)
                 .on("mousemove." + _(), function(e) {
-                    that._handle_mousemove.call(that, e);
+                    that._handle_resize_mousemove.call(that, e);
                 })
                 .on("mouseup." + _(), function(e) {
-                    that._handle_mouseup.call(that, e);
+                    that._handle_resize_mouseup.call(that, e);
                 });
 
             // trigger start event
@@ -667,15 +631,13 @@
          * @param  {Object} e
          * @return {Void}
          */
-        _handle_mousemove: function(e) {
+        _handle_resize_mousemove: function(e) {
             var _ = this._;
             var data = $(this.element)
                 .data(_("event-data"));
 
             // save current position
             data.handle.mouse.current = e.pageX;
-
-            // to do: shift/ctrl?
 
             // calculate drag offset and set column width
             var offset = data.handle.mouse.current - data.handle.mouse.start;
@@ -688,7 +650,7 @@
             data.next.size.current = data.next.size.start - offset;
             $(data.next.element).width(data.next.size.current);
 
-            // set handles content
+            // set handles.resize content
             var prec = this.options.displayPrecision;
             $(data.handle.element)
                 .attr("data-" + _("cell-size-column"), this._convert(data.column.size.current, prec))
@@ -704,7 +666,7 @@
          * @param  {Object} e
          * @return {Void}
          */
-        _handle_mouseup: function(e) {
+        _handle_resize_mouseup: function(e) {
             var _ = this._;
             var unit = this.options.unit;
             var data = $(this.element)

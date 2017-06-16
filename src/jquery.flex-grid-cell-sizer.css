@@ -5,21 +5,29 @@
 .flex-grid-content { position: relative; display: flex; flex-wrap: wrap; }
 .flex-grid-cell { position: relative; width: auto; min-width: 4em; }
 .flex-grid-article { height: calc(100% - 1em); margin: 0.5em; padding: 0; background: rgba(0,100,0,0.1); }
-.flex-grid-hidden { display: none; }
-.flex-grid-break {}
 
 /**
- * Flex grid resize
+ * Flex grid sizer
  */
 .jquery-flex-grid-cell-sizer {}
 .jquery-flex-grid-cell-sizer-cell {}
-.jquery-flex-grid-cell-sizer-handle { position: absolute; top: 0; right: -0.5em; bottom: 0; width: 0.5em; cursor: ew-resize; z-index: 100; opacity: 0; overflow: visible; border-radius: 0.25em; background: rgba(100,100,100,0.1); transform: translateX(-50%); transition: opacity 0.2s ease; }
-.flex-grid-break .jquery-flex-grid-cell-sizer-handle { display: none; }
-.jquery-flex-grid-cell-sizer-handle:hover { opacity: 1; }
-.jquery-flex-grid-cell-sizer-handle::before, .jquery-flex-grid-cell-sizer-handle::after { content: ""; position: absolute; display: inline-block; top: 0; height: 1em; line-height: 1; text-align: center; }
-.jquery-flex-grid-cell-sizer-handle::before { content: attr(data-jquery-flex-grid-cell-sizer-cell-size-column); right: 1em; }
-.jquery-flex-grid-cell-sizer-handle::after { content: attr(data-jquery-flex-grid-cell-sizer-cell-size-next); left: 1em; }
-.jquery-flex-grid-cell-sizer.jquery-flex-grid-cell-sizer-disabled .jquery-flex-grid-cell-sizer-handle::before, .jquery-flex-grid-cell-sizer.jquery-flex-grid-cell-sizer-disabled .jquery-flex-grid-cell-sizer-handle::after { display: none; }
+.jquery-flex-grid-cell-sizer-handle { position: absolute; display: none; top: 50%; width: 2em; height: 2em; line-height: 2em; z-index: 100; overflow: hidden; color: inherit; text-decoration: none; text-align: center; border-radius: 1em; opacity: 0; cursor: pointer; background: rgba(100,100,100,0.1); transform: translateY(-50%); transition: opacity 0.2s ease; }
+.jquery-flex-grid-cell-sizer-handle-split { right: 1em; }
+.jquery-flex-grid-cell-sizer-cell:hover .jquery-flex-grid-cell-sizer-handle-split { opacity: 1; }
+.jquery-flex-grid-cell-sizer-cell:not(.jquery-flex-grid-cell-sizer-grid-last-column) .jquery-flex-grid-cell-sizer-handle-split { display: block; }
+.jquery-flex-grid-cell-sizer-handle-join { left: 1em; }
+.jquery-flex-grid-cell-sizer-cell:hover .jquery-flex-grid-cell-sizer-handle-join { opacity: 1; }
+.jquery-flex-grid-cell-sizer-cell[data-jquery-flex-grid-cell-sizer-grid^="0,"]:not([data-jquery-flex-grid-cell-sizer-grid="0,0"]) .jquery-flex-grid-cell-sizer-handle-join { display: block; }
+.jquery-flex-grid-cell-sizer-handle-resize { top: 0; right: -0.5em; bottom: 0; width: 0.5em; height: auto; overflow: visible; cursor: ew-resize; border-radius: 0.25em; transform: translateX(-50%); }
+.jquery-flex-grid-cell-sizer-handle-resize:hover { opacity: 1; }
+.jquery-flex-grid-cell-sizer-cell:not(.jquery-flex-grid-cell-sizer-grid-last-column) .jquery-flex-grid-cell-sizer-handle-resize { display: block; }
+.jquery-flex-grid-cell-sizer-handle-resize::before, .jquery-flex-grid-cell-sizer-handle-resize::after { content: ""; position: absolute; display: inline-block; top: 0; height: 1em; line-height: 1; text-align: center; pointer-events: none; }
+.jquery-flex-grid-cell-sizer-handle-resize::before { content: attr(data-jquery-flex-grid-cell-sizer-cell-size-column); right: 1em; }
+.jquery-flex-grid-cell-sizer-handle-resize::after { content: attr(data-jquery-flex-grid-cell-sizer-cell-size-next); left: 1em; }
+
+/**
+ * Html on drag
+ */
 html.jquery-flex-grid-cell-sizer-dragging, html.jquery-flex-grid-cell-sizer-dragging * { cursor: ew-resize !important; }
-html.jquery-flex-grid-cell-sizer-dragging .jquery-flex-grid-cell-sizer-handle:hover { opacity: 0; }
-html.jquery-flex-grid-cell-sizer-dragging .jquery-flex-grid-cell-sizer-handle.jquery-flex-grid-cell-sizer-dragging { opacity: 1; }
+html.jquery-flex-grid-cell-sizer-dragging .jquery-flex-grid-cell-sizer-handle { opacity: 0 !important; }
+html.jquery-flex-grid-cell-sizer-dragging .jquery-flex-grid-cell-sizer-handle.jquery-flex-grid-cell-sizer-dragging { opacity: 1 !important; }
