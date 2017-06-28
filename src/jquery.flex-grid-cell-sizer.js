@@ -300,7 +300,8 @@
             that.handles = {
                 resize: $(null),
                 split: $(null),
-                join: $(null)
+                join: $(null),
+                normalize: $(null)
             }
 
             that.columns = $(that.element)
@@ -331,6 +332,16 @@
                         })
                         .appendTo(this);
 
+                    var $normalize = $("<a />")
+                        .attr("href", "#")
+                        .addClass(_("handle"))
+                        .addClass(_("handle-normalize"))
+                        .html("&harr;")
+                        .on("click." + _(), function(e) {
+                            that._handle_normalize_click.call(that, e);
+                        })
+                        .appendTo(this);
+
                     var $resize = $("<span />")
                         .addClass(_("handle"))
                         .addClass(_("handle-resize"))
@@ -343,6 +354,8 @@
                         .add($split);
                     that.handles.join = $(that.handles.join)
                         .add($join);
+                    that.handles.normalize = $(that.handles.normalize)
+                        .add($normalize);
                     that.handles.resize = $(that.handles.resize)
                         .add($resize);
                 });
@@ -607,6 +620,17 @@
          */
         _handle_join_click: function(e) {
             this.join(this.handles.join.index(e.target));
+            e.preventDefault();
+        },
+
+        /**
+         * Handle click event handler
+         *
+         * @param  {Object} e
+         * @return {Void}
+         */
+        _handle_normalize_click: function(e) {
+            this.normalize(this.handles.normalize.index(e.target));
             e.preventDefault();
         },
 

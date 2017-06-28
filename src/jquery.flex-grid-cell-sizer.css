@@ -11,7 +11,7 @@
  */
 .jquery-flex-grid-cell-sizer {}
 .jquery-flex-grid-cell-sizer-cell {}
-.jquery-flex-grid-cell-sizer-cell .jquery-flex-grid-cell-sizer-handle { position: absolute; display: none; top: 50%; width: 2em; height: 2em; line-height: 2em; z-index: 100; overflow: hidden; color: inherit; text-decoration: none; text-align: center; border-radius: 1em; opacity: 0; cursor: pointer; background: rgba(100,100,100,0.1); box-shadow: none; transform: translateY(-50%); transition: opacity 0.2s ease; }
+.jquery-flex-grid-cell-sizer-cell .jquery-flex-grid-cell-sizer-handle { position: absolute; display: none; top: 50%; width: 2em; height: 2em; line-height: 2em; z-index: 100; overflow: hidden; color: #333; text-decoration: none; text-align: center; border-radius: 1em; opacity: 0; cursor: pointer; background: rgba(100,100,100,0.1); box-shadow: none; transform: translateY(-50%); transition: opacity 0.2s ease; }
 .jquery-flex-grid-cell-sizer-cell .jquery-flex-grid-cell-sizer-handle:hover { color: inherit; text-decoration: inherit; box-shadow: inherit; }
 .jquery-flex-grid-cell-sizer-cell .jquery-flex-grid-cell-sizer-handle-split { right: 1em; }
 .jquery-flex-grid-cell-sizer-cell:hover .jquery-flex-grid-cell-sizer-handle-split { opacity: 0.75; }
@@ -21,6 +21,10 @@
 .jquery-flex-grid-cell-sizer-cell:hover .jquery-flex-grid-cell-sizer-handle-join { opacity: 0.75; }
 .jquery-flex-grid-cell-sizer-cell:hover .jquery-flex-grid-cell-sizer-handle-join:hover { opacity: 1; }
 .jquery-flex-grid-cell-sizer-cell[data-jquery-flex-grid-cell-sizer-grid^="0,"]:not([data-jquery-flex-grid-cell-sizer-grid="0,0"]) .jquery-flex-grid-cell-sizer-handle-join { display: block; }
+.jquery-flex-grid-cell-sizer-cell .jquery-flex-grid-cell-sizer-handle-normalize { display: block; top: auto; bottom: 1em; left: 50%; transform: translateX(-50%); }
+.jquery-flex-grid-cell-sizer-cell.jquery-flex-grid-cell-sizer-grid-last-column[data-jquery-flex-grid-cell-sizer-grid^="0,"] .jquery-flex-grid-cell-sizer-handle-normalize { display: none; }
+.jquery-flex-grid-cell-sizer-cell:hover .jquery-flex-grid-cell-sizer-handle-normalize { opacity: 0.75; }
+.jquery-flex-grid-cell-sizer-cell:hover .jquery-flex-grid-cell-sizer-handle-normalize:hover { opacity: 1; }
 .jquery-flex-grid-cell-sizer-cell .jquery-flex-grid-cell-sizer-handle-resize { top: 0; right: -0.5em; bottom: 0; width: 0.5em; height: auto; overflow: visible; cursor: ew-resize; border-radius: 0.25em; transform: translateX(-50%); }
 .jquery-flex-grid-cell-sizer-cell .jquery-flex-grid-cell-sizer-handle-resize:hover { opacity: 1; }
 .jquery-flex-grid-cell-sizer-cell:not(.jquery-flex-grid-cell-sizer-grid-last-column) .jquery-flex-grid-cell-sizer-handle-resize { display: block; }
