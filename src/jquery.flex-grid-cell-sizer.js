@@ -205,6 +205,53 @@
         },
 
         /**
+         * Normalize grid row
+         * (set the same width to all columns in row)
+         *
+         * @param  {Number} index (optional)
+         * @return {Void}
+         */
+        normalize: function(index) {
+            var grid = this.grid();
+            var result = $.extend(true, [], grid);
+            var pos = this._column_grid_position(index);
+            var width = $(this.element).width();
+
+            // normalize
+            if (typeof index === "undefined") {
+                for (var y in result) {
+                    for (var x in result[y]) {
+                        result[y][x] = this._convert(width / result[y].length, this.options.precision);
+                    }
+                }
+            }
+            else {
+                for (var x in result[pos.y]) {
+                    result[pos.y][x] = this._convert(width / result[pos.y].length, this.options.precision);
+                }
+            }
+
+            // concat results
+            grid = [].concat.apply([], grid);
+            result = [].concat.apply([], result);
+
+            // set width
+            var columns = this._differences(grid, result);
+            if (!columns.length)
+                return;
+
+            // refresh grid
+            this.refresh();
+
+            // trigger change
+            if (columns.length)
+                this._trigger("change", {
+                    target: this.element,
+                    column: columns
+                });
+        },
+
+        /**
          * Refresh
          *
          * @return {Void}
@@ -330,17 +377,9 @@
             // grid
             var grid = this.grid();
             var result = $.extend(true, [], grid);
-            var $column = this.columns.eq(index);
-
-            // column position
-            var pos = $column.attr("data-" + this._("grid"));
+            var pos = this._column_grid_position(index);
             if (!pos)
                 return;
-            pos = pos.split(",");
-            pos = {
-                x: pos[0] * 1,
-                y: pos[1] * 1
-            }
 
             // split action
             if (action === "split") {
@@ -397,31 +436,18 @@
 
             // execute action
             if (action === "remove") {
-                $column[action]();
+                this.columns.eq(index)[action]();
                 this._recreate_handles();
             }
             else if (["insertBefore", "insertAfter"].indexOf(action) !== -1) {
-                $(element)[action]($column);
+                $(element)[action](this.columns.eq(index));
                 this._recreate_handles();
             }
 
-            // fix sizes (get changes)
-            var columns = [];
-            $(this.columns)
-                .each(function(i) {
-                    if (grid[i] != result[i]) {
-                        columns.push({
-                            element: this,
-                            index: i,
-                            size: {
-                                before: grid[i],
-                                after: result[i]
-                            }
-                        });
-
-                        $(this).width(result[i]);
-                    }
-                });
+            // set width
+            var columns = this._differences(grid, result);
+            if (!columns.length)
+                return;
 
             // refresh grid
             this.refresh();
@@ -432,6 +458,25 @@
                     target: this.element,
                     column: columns
                 });
+        },
+
+        /**
+         * Get column grid position
+         *
+         * @param  {Number} index
+         * @return {Object}
+         */
+        _column_grid_position: function(index) {
+            var $column = this.columns.eq(index);
+            var attr = $column.attr("data-" + this._("grid"));
+            if (!attr)
+                return;
+            var arr = attr.split(",");
+
+            return {
+                x: arr[0] * 1,
+                y: arr[1] * 1
+            }
         },
 
         /**
@@ -495,6 +540,37 @@
             }
 
             return width.toFixed(precision) + (this.options.displayUnit ? "px" : "");
+        },
+
+        /**
+         * Get columns with missmatched sizes
+         * from grid arguments and set new
+         * width
+         *
+         * @param  {Array} before
+         * @param  {Array} after
+         * @return {Array}
+         */
+        _differences: function(before, after) {
+            var result = [];
+            $(this.columns)
+                .each(function(i) {
+                    if (before[i] == after[i])
+                        return true;
+
+                    result.push({
+                        element: this,
+                        index: i,
+                        size: {
+                            before: before[i],
+                            after: after[i]
+                        }
+                    });
+
+                    $(this).width(after[i]);
+                });
+
+            return result;
         },
 
         /**
