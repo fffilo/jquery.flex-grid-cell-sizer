@@ -374,17 +374,20 @@
          *
          * @todo : refactor this
          *
-         * @param  {String} action  split, join, remove, insertBefore or insertAfter
-         * @param  {Number} index   column index
-         * @param  {Mixed}  element (optional)
+         * @param  {String}  action    split, join, remove, insertBefore or insertAfter
+         * @param  {Number}  index     column index
+         * @param  {Mixed}   element   (optional)
+         * @param  {Boolean} notrigger (optional)
          * @return {Void}
          */
-        _alter_column: function(action, index, element) {
+        _alter_column: function(action, index, element, notrigger) {
+            var $element = $(element);
+
             if (["split", "join", "remove", "insertBefore", "insertAfter"].indexOf(action) === -1)
                 return;
 
             // element must exist on insert actions
-            if (!$(element).length && ["insertBefore", "insertAfter"].indexOf(action) !== -1)
+            if (!$element.length && ["insertBefore", "insertAfter"].indexOf(action) !== -1)
                 return;
 
             // grid
@@ -428,6 +431,19 @@
                 result[pos.y] = this._stretch(result[pos.y]);
             }
 
+            // element is part of columns, in the same row
+            // @todo
+
+            // element is part of columns, detach it first
+            else if ($element.is(this.columns)) {
+                var pos = this.columns.index($element);
+                this._alter_column("remove", pos, undefined, true);
+                if (pos < index)
+                    index--;
+
+                return this._alter_column(action, index, $element, notrigger);
+            }
+
             // insert actions
             else {
                 var sum = 0;
@@ -453,7 +469,7 @@
                 this._recreate_handles();
             }
             else if (["insertBefore", "insertAfter"].indexOf(action) !== -1) {
-                $(element)[action](this.columns.eq(index));
+                $element[action](this.columns.eq(index));
                 this._recreate_handles();
             }
 
@@ -466,7 +482,7 @@
             this.refresh();
 
             // trigger change
-            if (columns.length)
+            if (!notrigger && columns.length)
                 this._trigger("change", {
                     target: this.element,
                     column: columns
