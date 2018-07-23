@@ -175,6 +175,16 @@
         },
 
         /**
+         * Detach column
+         *
+         * @param  {Number} index
+         * @return {Void}
+         */
+        detach: function(index) {
+            return this._alter_column("detach", index);
+        },
+
+        /**
          * Remove column
          *
          * @param  {Number} index
@@ -383,7 +393,7 @@
         _alter_column: function(action, index, element, notrigger) {
             var $element = $(element);
 
-            if (["split", "join", "remove", "insertBefore", "insertAfter"].indexOf(action) === -1)
+            if (["split", "join", "detach", "remove", "insertBefore", "insertAfter"].indexOf(action) === -1)
                 return;
 
             // element must exist on insert actions
@@ -423,6 +433,14 @@
                 result[pos.y - 1] = this._stretch(result[pos.y - 1]);
             }
 
+            // detach action
+            else if (action === "detach") {
+                grid[pos.y].splice(pos.x, 1);
+                result[pos.y].splice(pos.x, 1);
+
+                result[pos.y] = this._stretch(result[pos.y]);
+            }
+
             // remove action
             else if (action === "remove") {
                 grid[pos.y].splice(pos.x, 1);
@@ -437,7 +455,7 @@
             // element is part of columns, detach it first
             else if ($element.is(this.columns)) {
                 var pos = this.columns.index($element);
-                this._alter_column("remove", pos, undefined, true);
+                this._alter_column("detach", pos, undefined, true);
                 if (pos < index)
                     index--;
 
@@ -464,7 +482,7 @@
             result = [].concat.apply([], result);
 
             // execute action
-            if (action === "remove") {
+            if (["detach", "remove"].indexOf(action) !== -1) {
                 this.columns.eq(index)[action]();
                 this._recreate_handles();
             }
