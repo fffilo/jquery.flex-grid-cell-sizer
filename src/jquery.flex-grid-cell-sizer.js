@@ -774,15 +774,26 @@
             data.handle.mouse.current = e.pageX;
 
             // calculate drag offset and set column width
-            var offset = data.handle.mouse.current - data.handle.mouse.start;
-            $(data.next.element).width(0);
+            var offset = Math.round(data.handle.mouse.current - data.handle.mouse.start);
+            $(data.next.element).css("display", "none");
             $(data.column.element).width(data.column.size.start + offset);
             data.column.size.current = $(data.column.element).width();
 
             // re-calculate drag offset (element can have min-width/max-width) set handle
-            offset = data.column.size.current - data.column.size.start;
+            offset = Math.round(data.column.size.current - data.column.size.start);
             data.next.size.current = data.next.size.start - offset;
-            $(data.next.element).width(data.next.size.current);
+            $(data.next.element)
+                .width(data.next.size.current)
+                .css("display", "");
+
+            // fix scrollbar offset
+            var scrollbar = data.target.size - $(data.target.element).outerWidth();
+            if (scrollbar)
+                $(data.next.element)
+                    .width("-=" + scrollbar);
+
+            // next element real width
+            data.next.size.current = $(data.next.element).width();
 
             // set handles.resize content
             var prec = this.options.displayPrecision;
