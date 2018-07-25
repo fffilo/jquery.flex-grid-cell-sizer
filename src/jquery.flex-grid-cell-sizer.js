@@ -128,7 +128,7 @@
                         current = width;
                     }
 
-                    result[result.length - 1].push(that._convert(width, prec));
+                    result[result.length - 1].push(that._from_px(width, prec));
                 });
 
             // remove empty row
@@ -149,7 +149,7 @@
             if (typeof width === "undefined")
                 return null;
 
-            return this._convert(width, this.options.precision);
+            return this._from_px(width, this.options.precision);
         },
 
         /**
@@ -231,13 +231,13 @@
             if (typeof index === "undefined") {
                 for (var y in result) {
                     for (var x in result[y]) {
-                        result[y][x] = this._convert(width / result[y].length, this.options.precision);
+                        result[y][x] = this._from_px(width / result[y].length, this.options.precision);
                     }
                 }
             }
             else {
                 for (var x in result[pos.y]) {
-                    result[pos.y][x] = this._convert(width / result[pos.y].length, this.options.precision);
+                    result[pos.y][x] = this._from_px(width / result[pos.y].length, this.options.precision);
                 }
             }
 
@@ -280,15 +280,15 @@
                     var width = $column.width();
 
                     $column
-                        .width(this._convert(width, this.options.precision))
+                        .width(this._from_px(width, this.options.precision))
                         .css("max-width", "")
                         .attr("data-" + _("grid"), col + "," + row)
                         .removeClass(_("grid-last-row"))
                         .removeClass(_("grid-last-column"));
 
                     $resize
-                        .attr("data-" + _("cell-size-column"), this._convert(width, this.options.displayPrecision))
-                        .attr("data-" + _("cell-size-next"), this._convert($(this.columns).eq(current + 1).width(), this.options.displayPrecision))
+                        .attr("data-" + _("cell-size-column"), this._from_px(width, this.options.displayPrecision))
+                        .attr("data-" + _("cell-size-next"), this._from_px($(this.columns).eq(current + 1).width(), this.options.displayPrecision))
 
                     if (row*1 + 1 === grid.length)
                         $column.addClass(_("grid-last-row"));
@@ -462,6 +462,27 @@
                 return this._alter_column(action, index, $element, notrigger);
             }
 
+            // column has width defined, do not change it
+            else if ($element.width()) {
+                var sum = 0;
+                for (var i in result[pos.y]) {
+                    sum += parseFloat(result[pos.y][i]);
+                }
+
+                var css = $element.get(0).style.width || $element.css("width");
+                var match = css.match(/\D+$/);
+                var width = parseFloat(css);
+                var unit = match ? match[0] : "";
+                var colWidth = this._to_px(width, unit);
+                var sumWidth =  this._to_px(sum, this.options.unit);
+
+                result[pos.y] = this._stretch(result[pos.y], sumWidth - colWidth);
+
+                var offset = pos.x + (action === "insertBefore" ? 0 : 1)
+                grid[pos.y].splice(offset, 0, 0);
+                result[pos.y].splice(offset, 0, this._from_px(colWidth));
+            }
+
             // insert actions
             else {
                 var sum = 0;
@@ -470,7 +491,7 @@
                 }
                 var avg = sum / result[pos.y].length;
 
-                var offset = pos.x + ("insertAfter" ? 1 : 0)
+                var offset = pos.x + (action === "insertBefore" ? 0 : 1)
                 grid[pos.y].splice(offset, 0, 0);
                 result[pos.y].splice(offset, 0, avg);
 
@@ -531,14 +552,15 @@
          * 100% width
          *
          * @param  {Array} values
+         * @param  {Mixed} size   (optional)
          * @return {Array}
          */
-        _stretch: function(values) {
-            var width = $(this.element).width();
+        _stretch: function(values, size) {
             var prec = this.options.precision;
             var unit = this.options.unit;
-            var size = this._convert(width, prec);
             var result = [];
+            size = size || ($(this.element).outerWidth() + "px");
+            size = this._from_px(size, prec);
 
             // calculate size
             var sum = 0;
@@ -569,9 +591,9 @@
          *
          * @param  {Numeric} width
          * @param  {Numeric} precision
-         * @return {Numeric}
+         * @return {String}
          */
-        _convert: function(width, precision) {
+        _from_px: function(width, precision) {
             var unit = this.options.unit;
             var suffix = this.options.displayUnit ? unit : "";
             width = parseFloat(width);
@@ -587,6 +609,29 @@
             }
 
             return width.toFixed(precision) + (this.options.displayUnit ? "px" : "");
+        },
+
+        /**
+         * Convert size from unit to px
+         *
+         * @param  {Numeric} width
+         * @param  {String}  unit  (optional)
+         * @return {Numeric}
+         */
+        _to_px: function(width, unit) {
+            unit = unit || this.options.unit;
+
+            if (unit === "%") {
+                return (width / 100) * $(this.element).outerWidth();
+            }
+            else if (unit === "em") {
+                return width * parseFloat($(this.element).css("font-size"));
+            }
+            else if (unit === "rem") {
+                return width * parseFloat($("body").css("font-size"));
+            }
+
+            return width;
         },
 
         /**
@@ -798,8 +843,8 @@
             // set handles.resize content
             var prec = this.options.displayPrecision;
             $(data.handle.element)
-                .attr("data-" + _("cell-size-column"), this._convert(data.column.size.current, prec))
-                .attr("data-" + _("cell-size-next"), this._convert(data.next.size.current, prec));
+                .attr("data-" + _("cell-size-column"), this._from_px(data.column.size.current, prec))
+                .attr("data-" + _("cell-size-next"), this._from_px(data.next.size.current, prec));
 
             // trigger move event
             this._trigger("dragmove", data);
@@ -854,16 +899,16 @@
                             element: data.column.element,
                             index: data.column.index,
                             size: {
-                                before: this._convert(data.column.size.start, prec),
-                                after: this._convert(data.column.size.stop, prec)
+                                before: this._from_px(data.column.size.start, prec),
+                                after: this._from_px(data.column.size.stop, prec)
                             }
                         },
                         {
                             element: data.next.element,
                             index: data.next.index,
                             size: {
-                                before: this._convert(data.next.size.start, prec),
-                                after: this._convert(data.next.size.stop, prec)
+                                before: this._from_px(data.next.size.start, prec),
+                                after: this._from_px(data.next.size.stop, prec)
                             }
                         }
                     ]
