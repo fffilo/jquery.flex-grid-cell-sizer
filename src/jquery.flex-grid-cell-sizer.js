@@ -463,13 +463,13 @@
             }
 
             // column has width defined, do not change it
-            else if ($element.width()) {
+            else if ($element.get(0).style.width) {
                 var sum = 0;
                 for (var i in result[pos.y]) {
                     sum += parseFloat(result[pos.y][i]);
                 }
 
-                var css = $element.get(0).style.width || $element.css("width");
+                var css = $element.get(0).style.width;
                 var match = css.match(/\D+$/);
                 var width = parseFloat(css);
                 var unit = match ? match[0] : "";
