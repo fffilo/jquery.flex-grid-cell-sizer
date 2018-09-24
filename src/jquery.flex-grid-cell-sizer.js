@@ -113,6 +113,7 @@
         grid: function() {
             var that = this;
             var size = $(that.element).outerWidth();
+            var unit = that.options.unit;
             var prec = that.options.precision;
             var current = 0;
             var result = [[]];
@@ -120,15 +121,20 @@
             // iterate columns
             $(that.columns)
                 .each(function(i) {
-                    var width = $(this).width();
-                    current += width;
+                    var widthStyle = this.style.width;
+                    var widthCalc = $(this).width();
+                    var unitMatch = widthStyle.match(/\D+$/);
+                    current += widthCalc;
 
-                    if (Math.round(current) > Math.round(size)) {
+                    if (current > size) {
                         result.push([]);
-                        current = width;
+                        current = widthCalc;
                     }
 
-                    result[result.length - 1].push(that._from_px(width, prec));
+                    if (unitMatch && unitMatch[0] === unit)
+                        result[result.length - 1].push(widthStyle);
+                    else
+                        result[result.length - 1].push(that._from_px(widthCalc, prec));
                 });
 
             // remove empty row
@@ -272,23 +278,25 @@
             var _ = this._;
 
             for (var row in grid) {
-                for (var col in grid[row]) {
-                    current++;
-
-                    var $column = this.columns.eq(current);
-                    var $resize = this.handles.resize.eq(current);
-                    var width = $column.width();
+                var columns = this._stretch(grid[row]);
+                for (var col in columns) {
+                    var width = columns[col*1];
+                    var dataUnit = this.options.displayUnit ? this.options.unit : ""
+                    var dataColumn = parseFloat(width).toFixed(this.options.displayPrecision) + dataUnit;
+                    var dataNext = parseFloat(columns[col*1 + 1]).toFixed(this.options.displayPrecision) + dataUnit;
+                    var $column = this.columns.eq(col*1);
+                    var $resize = this.handles.resize.eq(col*1);
 
                     $column
-                        .width(this._from_px(width, this.options.precision))
+                        .width(width)
                         .css("max-width", "")
                         .attr("data-" + _("grid"), col + "," + row)
                         .removeClass(_("grid-last-row"))
                         .removeClass(_("grid-last-column"));
 
                     $resize
-                        .attr("data-" + _("cell-size-column"), this._from_px(width, this.options.displayPrecision))
-                        .attr("data-" + _("cell-size-next"), this._from_px($(this.columns).eq(current + 1).width(), this.options.displayPrecision))
+                        .attr("data-" + _("cell-size-column"), dataColumn)
+                        .attr("data-" + _("cell-size-next"), dataNext);
 
                     if (row*1 + 1 === grid.length)
                         $column.addClass(_("grid-last-row"));
@@ -481,6 +489,7 @@
                 var offset = pos.x + (action === "insertBefore" ? 0 : 1)
                 grid[pos.y].splice(offset, 0, 0);
                 result[pos.y].splice(offset, 0, this._from_px(colWidth));
+                result[pos.y] = this._stretch(result[pos.y]);
             }
 
             // insert actions
@@ -726,6 +735,8 @@
 
             var that = this;
             var index = $(that.handles.resize).index(e.target);
+            var grid = this.grid();
+            var pos = this._column_grid_position(index);
             var $element = $(that.element);
             var $column = $(that.columns).eq(index);
             var $next = $(that.columns).eq(index + 1);
@@ -747,6 +758,7 @@
                     element: $column.get(0),
                     index: index,
                     size: {
+                        init: grid[pos.y][pos.x],
                         start: $column.width(),
                         current: null,
                         stop: null
@@ -756,6 +768,7 @@
                     element: $next.get(0),
                     index: index + 1,
                     size: {
+                        init: grid[pos.y][pos.x + 1],
                         start: $next.width(),
                         current: null,
                         stop: null
@@ -889,8 +902,9 @@
 
             // trigger change
             if (data.column.size.stop && data.column.size.stop !== data.column.size.start) {
-                var unit = this.options.unit;
-                var prec = this.options.precision;
+                // stretch
+                var grid = this.grid();
+                var pos = this._column_grid_position(data.column.index);
 
                 this._trigger("change", {
                     target: this.element,
@@ -899,16 +913,16 @@
                             element: data.column.element,
                             index: data.column.index,
                             size: {
-                                before: this._from_px(data.column.size.start, prec),
-                                after: this._from_px(data.column.size.stop, prec)
+                                before: data.column.size.init,
+                                after: grid[pos.y][pos.x]
                             }
                         },
                         {
                             element: data.next.element,
                             index: data.next.index,
                             size: {
-                                before: this._from_px(data.next.size.start, prec),
-                                after: this._from_px(data.next.size.stop, prec)
+                                before: data.next.size.init,
+                                after: grid[pos.y][pos.x + 1]
                             }
                         }
                     ]
