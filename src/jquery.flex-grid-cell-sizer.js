@@ -832,13 +832,13 @@
             data.handle.mouse.current = e.pageX;
 
             // calculate drag offset and set column width
-            var offset = Math.round(data.handle.mouse.current - data.handle.mouse.start);
+            var offset = data.handle.mouse.current - data.handle.mouse.start;
             $(data.next.element).css("display", "none");
             $(data.column.element).width(data.column.size.start + offset);
             data.column.size.current = $(data.column.element).width();
 
-            // re-calculate drag offset (element can have min-width/max-width) set handle
-            offset = Math.round(data.column.size.current - data.column.size.start);
+            // re-calculate drag offset (element can have min-width/max-width)
+            offset = data.column.size.current - data.column.size.start;
             data.next.size.current = data.next.size.start - offset;
             $(data.next.element)
                 .width(data.next.size.current)
