@@ -274,7 +274,7 @@
          */
         refresh: function() {
             var grid = this.grid();
-            var current = -1;
+            var index = 0;
             var _ = this._;
 
             for (var row in grid) {
@@ -284,8 +284,8 @@
                     var dataUnit = this.options.displayUnit ? this.options.unit : ""
                     var dataColumn = parseFloat(width).toFixed(this.options.displayPrecision) + dataUnit;
                     var dataNext = parseFloat(columns[col*1 + 1]).toFixed(this.options.displayPrecision) + dataUnit;
-                    var $column = this.columns.eq(col*1);
-                    var $resize = this.handles.resize.eq(col*1);
+                    var $column = this.columns.eq(index);
+                    var $resize = this.handles.resize.eq(index);
 
                     $column
                         .width(width)
@@ -302,6 +302,8 @@
                         $column.addClass(_("grid-last-row"));
                     if (col*1 + 1 === grid[row].length)
                         $column.addClass(_("grid-last-column"));
+
+                    index++;
                 }
             }
         },
