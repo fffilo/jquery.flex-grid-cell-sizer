@@ -574,25 +574,33 @@
             size = this._from_px(size, prec);
 
             // calculate size
+            // (sum is multiplied by 10pow4 so we
+            // avoid ieee 754 problem)
             var sum = 0;
             for (var i = 0; i < values.length; i++) {
-                sum += parseFloat(values[i]);
+                sum += parseFloat(values[i]) * Math.pow(10, prec);
             }
 
-            // increase by avg value
-            var avg = parseFloat(size) / sum;
-            var current = 0;
+            // increase each width
+            var inc = parseFloat(size) / (sum / Math.pow(10, prec));
             for (var i = 0; i < values.length; i++) {
-                var val = parseFloat(values[i]) * avg;
+                var val = parseFloat(values[i]) * inc;
                 val = val.toFixed(prec);
 
-                // fix decimal rounding problem
-                if (i === values.length - 1)
-                    val = (parseFloat(size) - current).toFixed(prec);
-
                 result.push(val + unit);
-                current += parseFloat(val);
             }
+
+            // fix decimal rounding problem by
+            // adjusting last column
+            var cur = 0;
+            for (var i = 0; i < result.length; i++) {
+                if (i === result.length - 1) {
+                    result[i] = ((sum - cur) / Math.pow(10, prec)).toFixed(prec) + unit;
+                    break;
+                }
+
+                cur += parseFloat(result[i]) * Math.pow(10, prec);
+            };
 
             return result;
         },
