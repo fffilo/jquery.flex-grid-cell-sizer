@@ -743,6 +743,8 @@
             if (e.which !== 1)
                 return;
 
+            this._trigger("beforedragstart", data);
+
             var that = this;
             var index = $(that.handles.resize).index(e.target);
             var grid = this.grid();
@@ -907,16 +909,14 @@
             $(data.target.element)
                 .removeData(_("event-data"));
 
-            // trigger stop event
-            this._trigger("dragstop", data);
-
             // trigger change
             if (data.column.size.stop && data.column.size.stop !== data.column.size.start) {
                 // stretch
                 var grid = this.grid();
                 var pos = this._column_grid_position(data.column.index);
 
-                this._trigger("change", {
+                // event data
+                var data = {
                     target: this.element,
                     column: [
                         {
@@ -936,8 +936,20 @@
                             }
                         }
                     ]
-                });
+                }
+
+                // fix decimal rounding problem
+                var unit = this.options.unit;
+                var prec = this.options.precision;
+                var sum = parseFloat(data.column[0].size.before) * Math.pow(10, prec) + parseFloat(data.column[1].size.before) * Math.pow(10, prec);
+                data.column[1].size.after = (sum - parseFloat(data.column[0].size.after) * Math.pow(10, prec)) / Math.pow(10, prec) + unit;
+
+                // event
+                this._trigger("change", data);
             }
+
+            // trigger stop event
+            this._trigger("dragstop", data);
         }
 
     }
