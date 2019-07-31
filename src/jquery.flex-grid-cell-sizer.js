@@ -97,6 +97,8 @@
                 .off("." + _())
                 .children("." + _("cell"))
                     .removeClass(_("cell"))
+                    .removeClass(_("grid-last-row"))
+                    .removeClass(_("grid-last-column"))
                     .removeAttr("data-" + _())
                     .children("." + _("handle"))
                         .remove();
