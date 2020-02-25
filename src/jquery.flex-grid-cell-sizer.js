@@ -139,9 +139,12 @@
                         result[result.length - 1].push(that._from_px(widthCalc, prec));
                 });
 
-            // remove empty row
-            while (!result[result.length - 1].length)
-                result.pop();
+            // remove empty row (ignoring first one we're
+            // making sure that we leave result in right
+            // format)
+            if (result.length > 1)
+                while (!result[result.length - 1].length)
+                    result.pop();
 
             return result;
         },
