@@ -79,7 +79,7 @@
                 .data(_(), this);
 
             // ready
-            this._recreate_handles();
+            this._recreateHandles();
             this.refresh();
         },
 
@@ -136,7 +136,7 @@
                     if (unitMatch && unitMatch[0] === unit)
                         result[result.length - 1].push(widthStyle);
                     else
-                        result[result.length - 1].push(that._from_px(widthCalc, prec));
+                        result[result.length - 1].push(that._fromPx(widthCalc, prec));
                 });
 
             // remove empty row (ignoring first one we're
@@ -160,7 +160,7 @@
             if (typeof width === "undefined")
                 return null;
 
-            return this._from_px(width, this.options.precision);
+            return this._fromPx(width, this.options.precision);
         },
 
         /**
@@ -171,7 +171,7 @@
          * @return {Void}
          */
         insertBefore: function(index, element) {
-            return this._alter_column("insertBefore", index, element);
+            return this._alterColumn("insertBefore", index, element);
         },
 
         /**
@@ -182,7 +182,7 @@
          * @return {Void}
          */
         insertAfter: function(index, element) {
-            return this._alter_column("insertAfter", index, element);
+            return this._alterColumn("insertAfter", index, element);
         },
 
         /**
@@ -192,7 +192,7 @@
          * @return {Void}
          */
         detach: function(index) {
-            return this._alter_column("detach", index);
+            return this._alterColumn("detach", index);
         },
 
         /**
@@ -202,7 +202,7 @@
          * @return {Void}
          */
         remove: function(index) {
-            return this._alter_column("remove", index);
+            return this._alterColumn("remove", index);
         },
 
         /**
@@ -212,7 +212,7 @@
          * @return {Void}
          */
         split: function(index) {
-            return this._alter_column("split", index);
+            return this._alterColumn("split", index);
         },
 
         /**
@@ -222,7 +222,7 @@
          * @return {Void}
          */
         join: function(index) {
-            return this._alter_column("join", index);
+            return this._alterColumn("join", index);
         },
 
         /**
@@ -235,20 +235,20 @@
         normalize: function(index) {
             var grid = this.grid();
             var result = $.extend(true, [], grid);
-            var pos = this._column_grid_position(index);
+            var pos = this._columnGridPosition(index);
             var width = $(this.element).width();
 
             // normalize
             if (typeof index === "undefined") {
                 for (var y in result) {
                     for (var x in result[y]) {
-                        result[y][x] = this._from_px(width / result[y].length, this.options.precision);
+                        result[y][x] = this._fromPx(width / result[y].length, this.options.precision);
                     }
                 }
             }
             else {
                 for (var x in result[pos.y]) {
-                    result[pos.y][x] = this._from_px(width / result[pos.y].length, this.options.precision);
+                    result[pos.y][x] = this._fromPx(width / result[pos.y].length, this.options.precision);
                 }
             }
 
@@ -318,7 +318,7 @@
          *
          * @return {Void}
          */
-        _recreate_handles: function() {
+        _recreateHandles: function() {
             var that = this;
             var _ = that._;
 
@@ -343,7 +343,7 @@
                         .addClass(_("handle-split"))
                         .html("&#8629;")
                         .on("click." + _(), function(e) {
-                            that._handle_split_click.call(that, e);
+                            that._handleSplitClick.call(that, e);
                         })
                         .appendTo(this);
 
@@ -353,7 +353,7 @@
                         .addClass(_("handle-join"))
                         .html("&#8612;")
                         .on("click." + _(), function(e) {
-                            that._handle_join_click.call(that, e);
+                            that._handleJoinClick.call(that, e);
                         })
                         .appendTo(this);
 
@@ -363,7 +363,7 @@
                         .addClass(_("handle-normalize"))
                         .html("&harr;")
                         .on("click." + _(), function(e) {
-                            that._handle_normalize_click.call(that, e);
+                            that._handleNormalizeClick.call(that, e);
                         })
                         .appendTo(this);
 
@@ -371,7 +371,7 @@
                         .addClass(_("handle"))
                         .addClass(_("handle-resize"))
                         .on("mousedown." + _(), function(e) {
-                            that._handle_resize_mousedown.call(that, e);
+                            that._handleResizeMousedown.call(that, e);
                         })
                         .appendTo(this);
 
@@ -405,7 +405,7 @@
          * @param  {Boolean} notrigger (optional)
          * @return {Void}
          */
-        _alter_column: function(action, index, element, notrigger) {
+        _alterColumn: function(action, index, element, notrigger) {
             var $element = $(element);
 
             if (["split", "join", "detach", "remove", "insertBefore", "insertAfter"].indexOf(action) === -1)
@@ -418,7 +418,7 @@
             // grid
             var grid = this.grid();
             var result = $.extend(true, [], grid);
-            var pos = this._column_grid_position(index);
+            var pos = this._columnGridPosition(index);
             if (!pos)
                 return;
 
@@ -470,11 +470,11 @@
             // element is part of columns, detach it first
             else if ($element.is(this.columns)) {
                 var pos = this.columns.index($element);
-                this._alter_column("detach", pos, undefined, true);
+                this._alterColumn("detach", pos, undefined, true);
                 if (pos < index)
                     index--;
 
-                return this._alter_column(action, index, $element, notrigger);
+                return this._alterColumn(action, index, $element, notrigger);
             }
 
             // column has width defined, do not change it
@@ -488,14 +488,14 @@
                 var match = css.match(/\D+$/);
                 var width = parseFloat(css);
                 var unit = match ? match[0] : "";
-                var colWidth = this._to_px(width, unit);
-                var sumWidth =  this._to_px(sum, this.options.unit);
+                var colWidth = this._toPx(width, unit);
+                var sumWidth =  this._toPx(sum, this.options.unit);
 
                 result[pos.y] = this._stretch(result[pos.y], sumWidth - colWidth);
 
                 var offset = pos.x + (action === "insertBefore" ? 0 : 1)
                 grid[pos.y].splice(offset, 0, 0);
-                result[pos.y].splice(offset, 0, this._from_px(colWidth));
+                result[pos.y].splice(offset, 0, this._fromPx(colWidth));
                 result[pos.y] = this._stretch(result[pos.y]);
             }
 
@@ -521,11 +521,11 @@
             // execute action
             if (["detach", "remove"].indexOf(action) !== -1) {
                 this.columns.eq(index)[action]();
-                this._recreate_handles();
+                this._recreateHandles();
             }
             else if (["insertBefore", "insertAfter"].indexOf(action) !== -1) {
                 $element[action](this.columns.eq(index));
-                this._recreate_handles();
+                this._recreateHandles();
             }
 
             // set width
@@ -550,7 +550,7 @@
          * @param  {Number} index
          * @return {Object}
          */
-        _column_grid_position: function(index) {
+        _columnGridPosition: function(index) {
             var $column = this.columns.eq(index);
             var attr = $column.attr("data-" + this._("grid"));
             if (!attr)
@@ -576,7 +576,7 @@
             var unit = this.options.unit;
             var result = [];
             size = size || ($(this.element).outerWidth() + "px");
-            size = this._from_px(size, prec);
+            size = this._fromPx(size, prec);
 
             // calculate size
             // (sum is multiplied by 10pow4 so we
@@ -617,7 +617,7 @@
          * @param  {Numeric} precision
          * @return {String}
          */
-        _from_px: function(width, precision) {
+        _fromPx: function(width, precision) {
             var unit = this.options.unit;
             var suffix = this.options.displayUnit ? unit : "";
             width = parseFloat(width);
@@ -642,7 +642,7 @@
          * @param  {String}  unit  (optional)
          * @return {Numeric}
          */
-        _to_px: function(width, unit) {
+        _toPx: function(width, unit) {
             unit = unit || this.options.unit;
 
             if (unit === "%") {
@@ -710,7 +710,7 @@
          * @param  {Object} e
          * @return {Void}
          */
-        _handle_split_click: function(e) {
+        _handleSplitClick: function(e) {
             this.split(this.handles.split.index(e.target));
             e.preventDefault();
         },
@@ -721,7 +721,7 @@
          * @param  {Object} e
          * @return {Void}
          */
-        _handle_join_click: function(e) {
+        _handleJoinClick: function(e) {
             this.join(this.handles.join.index(e.target));
             e.preventDefault();
         },
@@ -732,7 +732,7 @@
          * @param  {Object} e
          * @return {Void}
          */
-        _handle_normalize_click: function(e) {
+        _handleNormalizeClick: function(e) {
             this.normalize(this.handles.normalize.index(e.target));
             e.preventDefault();
         },
@@ -743,7 +743,7 @@
          * @param  {Object} e
          * @return {Void}
          */
-        _handle_resize_mousedown: function(e) {
+        _handleResizeMousedown: function(e) {
             // left mouse button only
             if (e.which !== 1)
                 return;
@@ -753,7 +753,7 @@
             var that = this;
             var index = $(that.handles.resize).index(e.target);
             var grid = this.grid();
-            var pos = this._column_grid_position(index);
+            var pos = this._columnGridPosition(index);
             var $element = $(that.element);
             var $column = $(that.columns).eq(index);
             var $next = $(that.columns).eq(index + 1);
@@ -762,7 +762,7 @@
 
             // mouseup outside viewport fix
             if ($(this.element).data(_("event-data")))
-                this._handle_resize_mouseup(e);
+                this._handleResizeMouseup(e);
 
             // event data
             var data = {
@@ -822,10 +822,10 @@
             // bind mouse events on window
             $(window)
                 .on("mousemove." + _(), function(e) {
-                    that._handle_resize_mousemove.call(that, e);
+                    that._handleResizeMousemove.call(that, e);
                 })
                 .on("mouseup." + _(), function(e) {
-                    that._handle_resize_mouseup.call(that, e);
+                    that._handleResizeMouseup.call(that, e);
                 });
 
             // trigger start event
@@ -840,7 +840,7 @@
          * @param  {Object} e
          * @return {Void}
          */
-        _handle_resize_mousemove: function(e) {
+        _handleResizeMousemove: function(e) {
             var _ = this._;
             var data = $(this.element)
                 .data(_("event-data"));
@@ -873,8 +873,8 @@
             // set handles.resize content
             var prec = this.options.displayPrecision;
             $(data.handle.element)
-                .attr("data-" + _("cell-size-column"), this._from_px(data.column.size.current, prec))
-                .attr("data-" + _("cell-size-next"), this._from_px(data.next.size.current, prec));
+                .attr("data-" + _("cell-size-column"), this._fromPx(data.column.size.current, prec))
+                .attr("data-" + _("cell-size-next"), this._fromPx(data.next.size.current, prec));
 
             // trigger move event
             this._trigger("dragmove", data);
@@ -886,7 +886,7 @@
          * @param  {Object} e
          * @return {Void}
          */
-        _handle_resize_mouseup: function(e) {
+        _handleResizeMouseup: function(e) {
             var _ = this._;
             var unit = this.options.unit;
             var data = $(this.element)
@@ -918,7 +918,7 @@
             if (data.column.size.stop && data.column.size.stop !== data.column.size.start) {
                 // stretch
                 var grid = this.grid();
-                var pos = this._column_grid_position(data.column.index);
+                var pos = this._columnGridPosition(data.column.index);
 
                 // event data
                 var data = {
