@@ -955,9 +955,12 @@
 
             // trigger stop event
             this._trigger("dragstop", data);
-        }
+        },
 
-    }
+    };
+
+    // Re-assing constructor
+    FlexGridCellSizer.prototype.constructor = FlexGridCellSizer;
 
     // jQuery plugin
     $.fn.flexGridCellSizer = function(options) {
