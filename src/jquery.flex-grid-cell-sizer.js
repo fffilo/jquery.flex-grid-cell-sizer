@@ -114,10 +114,10 @@
          */
         grid: function() {
             var that = this;
-            var size = $(that.element).outerWidth();
             var unit = that.options.unit;
             var prec = that.options.precision;
-            var current = 0;
+            var sizePow = $(that.element).outerWidth() * Math.pow(10, prec);
+            var currentPow = 0;
             var result = [[]];
 
             // iterate columns
@@ -126,11 +126,20 @@
                     var widthStyle = this.style.width;
                     var widthCalc = $(this).width();
                     var unitMatch = widthStyle.match(/\D+$/);
-                    current += widthCalc;
 
-                    if (current > size) {
+                    currentPow += widthCalc * Math.pow(10, prec);
+
+                    // fix last column size (if diff is less than 1px)
+                    // to adjust decimal rounding problem
+                    if (i === that.columns.length - 1 && currentPow !== sizePow && Math.abs(sizePow - currentPow) < Math.pow(10, prec)) {
+                        currentPow -= widthCalc * Math.pow(10, prec);
+                        widthCalc = (sizePow - currentPow) / Math.pow(10, prec);
+                    }
+
+                    // ...or create new row
+                    else if (currentPow > sizePow) {
                         result.push([]);
-                        current = widthCalc;
+                        currentPow = widthCalc * Math.pow(10, prec);
                     }
 
                     if (unitMatch && unitMatch[0] === unit)
